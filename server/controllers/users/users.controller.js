@@ -100,10 +100,87 @@ const getSingleUserCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
+//---- Get User profile ----// i.e User getting his own profile
+const getUserProfileCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isValid = isValidMongoDbId(id);
+    if (!isValid) {
+      throw new Error("Invalid Id");
+    }
+    const user = await User.findById(id);
+    res.status(200).json(user);
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+//---- Update User profile ----// i.e User updating his own profile
+
+const updateProfileCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isValid = isValidMongoDbId(id);
+    if (!isValid) {
+      throw new Error("Invalid Id");
+    }
+    // We'll check if the user trying to update is the same user or user is trying to update somone else's profile ,by comparing with the req.user assigned after authorization
+
+    if (id !== req.user.id) {
+      throw new Error("You are not authorized to update this profile");
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true, // This will run the validators defined in the model
+    });
+    res.status(200).json(updatedUser);
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+// ---Update Password ---//
+const updatePasswordCtrl = expressAsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  try {
+    //Checking if the Mongo id is valid or not
+    const isValid = isValidMongoDbId(id);
+    if (!isValid) {
+      throw new Error("Invalid Id");
+    }
+    // Checking if the user trying to update is the same user or user is trying to update somone else's profile ,by comparing with the req.user assigned after authorization
+    if (id !== req.user.id) {
+      throw new Error("You are not authorized to update password");
+    }
+    // Now checking if sent old password matches the one in the database
+    const user = await User.findById(id);
+    const { oldPassword } = req.body;
+    const verdict = await bcrypt.compare(oldPassword, user.password);
+    if (!verdict) {
+      throw new Error("Old password is incorrect");
+    }
+    // => User is authorized to update password and has entered correct previous password
+    const { newPassword } = req.body;
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { password: hashedPassword },
+      { new: true }
+    );
+    res.status(200).json(updatedUser);
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
 module.exports = {
   registerUserCtrl,
   loginUserCtrl,
   getAllUsersCtrl,
   deleteUserCtrl,
   getSingleUserCtrl,
+  getUserProfileCtrl,
+  updateProfileCtrl,
+  updatePasswordCtrl,
 };
