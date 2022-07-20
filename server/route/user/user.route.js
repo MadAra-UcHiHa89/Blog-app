@@ -17,11 +17,16 @@ const {
   verifyAccountCtrl,
   forgotPasswordTokenCtrl,
   forgotPasswordCtrl,
+  profilePhotoUploadCtrl,
 } = require("../../controllers/users/users.controller");
 
 const {
   authorizationMiddleware,
 } = require("../../middlewares/auth/authMiddleware");
+const {
+  profilePhotoUpload,
+  profilePhotoResize,
+} = require("../../middlewares/upload/profilePhotoUpload");
 
 // Login User
 router.post("/login", loginUserCtrl);
@@ -63,6 +68,15 @@ router.put("/unfollow", authorizationMiddleware, unfollowUserCtrl);
 
 // block User
 router.put("/block/:id", authorizationMiddleware, blockUserCtrl);
+
+// Upload profile picture (put method since we are updating the user)
+router.put(
+  "/profilephoto-upload",
+  authorizationMiddleware,
+  profilePhotoUpload.single("image"), // image -> value of name attribute of form's input field
+  profilePhotoResize, // Middleware that resizes the image
+  profilePhotoUploadCtrl
+);
 
 // Unblock User (Her we'll have admin only middleware to unblock a user)
 router.put("/unblock/:id", authorizationMiddleware, unblockUserCtrl);

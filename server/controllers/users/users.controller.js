@@ -137,7 +137,7 @@ const updateProfileCtrl = expressAsyncHandler(async (req, res) => {
     const { id } = req.params;
     const isValid = isValidMongoDbId(id);
     if (!isValid) {
-      throw new Error("Invalid Id");
+      throw new Error("Invalid Mongo Id");
     }
     // We'll check if the user trying to update is the same user or user is trying to update somone else's profile ,by comparing with the req.user assigned after authorization
 
@@ -437,12 +437,10 @@ const forgotPasswordTokenCtrl = expressAsyncHandler(async (req, res) => {
     };
     // Now sending the email
     const response = await sgEmail.send(msg);
-    res
-      .status(200)
-      .json({
-        message: `Verification message sent to ${email}. Reset within 10 Minutes `,
-        resetURL,
-      });
+    res.status(200).json({
+      message: `Verification message sent to ${email}. Reset within 10 Minutes `,
+      resetURL,
+    });
   } catch (err) {
     throw new Error(err);
   }
@@ -488,6 +486,17 @@ const forgotPasswordCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
+// --- Profile Photo Upload --- //
+
+const profilePhotoUploadCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    console.log("req", req.file);
+    res.json("Profile Photo Uploaded");
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
 module.exports = {
   registerUserCtrl,
   loginUserCtrl,
@@ -505,4 +514,5 @@ module.exports = {
   verifyAccountCtrl,
   forgotPasswordTokenCtrl,
   forgotPasswordCtrl,
+  profilePhotoUploadCtrl,
 };
