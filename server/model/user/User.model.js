@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema(
   {
@@ -113,6 +114,24 @@ userSchema.pre("save", async function (next) {
 // Hased password comparison method
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password); // this.password is the hashed password that is stored in the database
+};
+
+// Creating the token for verification and assigning to the fields
+
+userSchema.methods.createAccountVerificationToken = async function () {
+  const token = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  this.accountVerificationToken = hashedToken; // assigning the hashed token to the accountVerificationToken field of the document
+  this.accountVerificationTokenExpires = Date.now() + 1000 * 60 * 10; // setting the expiry time of the token to 10 minutes from the time user sends the reqruest for verification of account
+  return token; // returning the token to the controller so it can send it to the frontend
+};
+
+userSchema.methods.createPasswordResetToken = async function () {
+  const token = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  this.passwordResetToken = hashedToken; // assigning the hashed token to the passwordResetToken field of the document
+  this.passwordResetTokenExpires = Date.now() + 1000 * 60 * 10; // setting the expiry time of the token to 10 minutes from the time user sends the reqruest for verification of account
+  return token; // returning the token to the controller so it can send it to the frontend
 };
 
 // Comiling the schema to a model

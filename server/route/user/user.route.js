@@ -13,23 +13,47 @@ const {
   unfollowUserCtrl,
   blockUserCtrl,
   unblockUserCtrl,
+  generateVerificationTokenCtrl,
+  verifyAccountCtrl,
+  forgotPasswordTokenCtrl,
+  forgotPasswordCtrl,
 } = require("../../controllers/users/users.controller");
 
 const {
   authorizationMiddleware,
 } = require("../../middlewares/auth/authMiddleware");
 
-// Get All Users
-router.get("/", authorizationMiddleware, getAllUsersCtrl);
-
 // Login User
 router.post("/login", loginUserCtrl);
+
+// Get All Users
+router.get("/", authorizationMiddleware, getAllUsersCtrl);
 
 // Register User
 router.post("/register", registerUserCtrl);
 
+// generate-verify-token
+router.post(
+  "/generate-verify-token",
+  authorizationMiddleware,
+  generateVerificationTokenCtrl
+);
+
+// Verify Account (for now its get but later will be put since we are updating the user)
+router.get(
+  "/verify-account/:token",
+  authorizationMiddleware,
+  verifyAccountCtrl
+);
+
+// Generate token for forgot password (No authorization middleware required since user has forgot password and cannot login)
+router.post("/forgot-password-token", forgotPasswordTokenCtrl);
+
+// Forgot passwrord (reset password) (Same as above no authorization middleware required) put method since we are updating the user
+router.put("/forgot-password", forgotPasswordCtrl);
+
 // Delete a User
-router.delete("/:id", deleteUserCtrl);
+router.delete("/:id", authorizationMiddleware, deleteUserCtrl);
 
 // Follow a User
 router.put("/follow", authorizationMiddleware, followUserCtrl);

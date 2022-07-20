@@ -1,8 +1,12 @@
 const User = require("../../model/user/User.model");
 const bcrypt = require("bcryptjs");
+const sgEmail = require("@sendgrid/mail"); // The sendgrid object which has methods to send the email
 const expressAsyncHandler = require("express-async-handler");
 const { generateToken } = require("../..//config/token/generateToken");
 const { isValidMongoDbId } = require("../../utils/validateMongoDBId");
+const crypto = require("crypto");
+
+sgEmail.setApiKey(process.env.SEND_GRID_API_KEY); // Setting the API key for the sendgrid object
 
 // ---Register User ---//
 const registerUserCtrl = expressAsyncHandler(async (req, res) => {
@@ -39,6 +43,9 @@ const loginUserCtrl = expressAsyncHandler(async (req, res) => {
     }
 
     const isMatch = await user.comparePassword(req?.body?.password);
+    const valid = await bcrypt.compare(req?.body?.password, user?.password);
+    console.log(req.body.password);
+
     console.log(isMatch);
     if (!isMatch) {
       throw new Error("Invalid Credentials");
@@ -78,8 +85,12 @@ const deleteUserCtrl = expressAsyncHandler(async (req, res) => {
     if (!isValidId) {
       throw new Error("Please provide a valid Mongo Id");
     }
-    const deletedUser = await User.findByIdAndDelete(id);
-    res.status(200).json({ message: "User deleted successfully" });
+    if (id === req.user.id || req.user.isAdmin) {
+      const deletedUser = await User.findByIdAndDelete(id);
+      res.status(200).json({ message: "User deleted successfully" });
+    } else {
+      throw new Error("Not authorized to delete this user");
+    }
   } catch (err) {
     throw new Error(err);
   }
@@ -108,8 +119,12 @@ const getUserProfileCtrl = expressAsyncHandler(async (req, res) => {
     if (!isValid) {
       throw new Error("Invalid Id");
     }
-    const user = await User.findById(id);
-    res.status(200).json(user);
+    if (id === req.user.id) {
+      const user = await User.findById(id);
+      res.status(200).json(user);
+    } else {
+      throw new Error("Not authorized to view this profile");
+    }
   } catch (err) {
     throw new Error(err);
   }
@@ -272,6 +287,7 @@ const unfollowUserCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
+// ---Block User ---//
 const blockUserCtrl = expressAsyncHandler(async (req, res) => {
   try {
     const { id: userToBlock } = req.params;
@@ -294,6 +310,7 @@ const blockUserCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
+// --- Unblock User --- //
 const unblockUserCtrl = expressAsyncHandler(async (req, res) => {
   try {
     const { id: userToUnblock } = req.params;
@@ -314,6 +331,163 @@ const unblockUserCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
+// ---Account Verification By Sending Email (Through Email) --- //
+
+const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id } = req.user;
+    // We need to call the genearte token function of the user model , so that we can generate a token for verification of user
+    // So finding the user by id
+    const user = await User.findById(id);
+    if (!user.isAccountVerified) {
+      // User not verified yet
+      // Generating a token
+      const accountVerificationToken =
+        await user.createAccountVerificationToken(); // calling the schema method which geneartes token (using cryptp) and assigns the fields in that document
+      // awaiting since the method is async as it makes changes to the document in the database
+      // console.log(accountVerificationToken);
+      await user.save(); // Have to save the user manually since we are doing changes to the dcoement directly from method in app and not using update methods
+
+      const verifyURL = `If you requested to verify your account, please click on the following link: <a href="http://localhost:6000/api/users/verify-account/${accountVerificationToken}">Click Here To Verify!</a> in 10 minutes !, If not then ignore `;
+      // The href should be to the frontend page where the page will send a reuest to verify account to the backend on mounting. and display message based on the response
+      const msg = {
+        to: req.body.email, // Change to your recipient
+        from: "aadilsaudagar26@gmail.com", // Change to your verified sender
+        subject: "Blog App - Email Verification",
+        // text: "Just testing",
+        html: verifyURL,
+      };
+
+      const response = await sgEmail.send(msg);
+      // console.log(response);
+      // res.status(200).json({ message: "Email Sent" });
+      res.status(200).json(verifyURL);
+    } else {
+      // user already verified
+      res.status(200).json({ message: "User Already Verified" });
+    }
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+//--- Verify Account ---//
+const verifyAccountCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { token } = req.params;
+    const hasedPassword = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex"); // Hashing the token
+    // Getting user by the hashed password thus if there exits a user => then the token is valid, else token is invalid
+    const user = await User.findOne({
+      accountVerificationToken: hasedPassword,
+    });
+    if (!user) {
+      throw new Error("Invalid Token");
+    }
+    // => Token is valid , Now checking if token has expired or not
+    if (user.accountVerificationTokenExpires < Date.now()) {
+      throw new Error("Token Expired");
+    }
+    // Token valid and not expired hence can verify the user
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      {
+        isAccountVerified: true,
+        accountVerificationToken: "",
+        accountVerificationTokenExpires: "",
+      },
+      { new: true, runValidators: true }
+    );
+    res
+      .status(200)
+      .json({ message: "Account Verified Successfully", user: updatedUser });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+// ---Generate token for resetting password --- //
+
+const forgotPasswordTokenCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    // user hasn't logged in since forgot the password so he has entered his / her email in the request
+    const { email } = req.body;
+    //finding that user by email
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      // => User provided isnt registered to the platform
+      throw new Error("User Not Found");
+    }
+
+    // Generating a token for forgot password and storing it in the user document
+    const fpasswordToken = await user.createPasswordResetToken();
+    // Saving the user document changes to the database
+    await user.save();
+    // Now will send the raw token to the user's email
+
+    const resetURL = `If you requested to reset your password <br> Code: <h5>${fpasswordToken}</h5>  <br>please click on the following link: <a href="http://localhost:6000/api/users/verify-account/${fpasswordToken}">Click Here To Reset!</a>. Respond within 10 minutes !, If not then ignore `;
+    const msg = {
+      to: user.email,
+      from: "aadilsaudagar26@gmail.com", // verified sender address of send grid
+      subject: "Blog App - Password Reset",
+      // text: "Just testing",
+      html: resetURL,
+    };
+    // Now sending the email
+    const response = await sgEmail.send(msg);
+    res
+      .status(200)
+      .json({
+        message: `Verification message sent to ${email}. Reset within 10 Minutes `,
+        resetURL,
+      });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+// --- Forgot Password --- //
+
+const forgotPasswordCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    // The token user got from email , will send it in the request body to this endpoint
+    const { token, newPassword } = req.body;
+    // If user exits with hash of token ==  passwordResetToken field then token is valid , else token is invalid
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    // Now will find the user with passwordResetToken == hashedToken and if user exists then token is valid
+    const user = await User.findOne({ passwordResetToken: hashedToken });
+    if (!user) {
+      // => Token is invalid
+      throw new Error("Invalid Token/Code");
+    }
+    // => Token is valid , Now checking if token has expired or not
+    if (user.passwordResetTokenExpires < Date.now()) {
+      // Token expired
+      throw new Error("Token Expired");
+    }
+    // Token valid and not expired hence can reset the user's password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const id = user._id;
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        password: hashedPassword,
+        passwordResetToken: "",
+        passwordResetTokenExpires: "",
+      },
+      { new: true, runValidators: true }
+    );
+    res
+      .status(200)
+      .json({ message: "Password Reset Successfully", user: updatedUser });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
 module.exports = {
   registerUserCtrl,
   loginUserCtrl,
@@ -327,4 +501,8 @@ module.exports = {
   unfollowUserCtrl,
   blockUserCtrl,
   unblockUserCtrl,
+  generateVerificationTokenCtrl,
+  verifyAccountCtrl,
+  forgotPasswordTokenCtrl,
+  forgotPasswordCtrl,
 };
