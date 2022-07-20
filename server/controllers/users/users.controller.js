@@ -174,6 +174,146 @@ const updatePasswordCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
+//--- Follow User ---//
+// Here receiver -> user who is being followed , sender -> user who is following
+const followUserCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id: receiverId } = req.body;
+    const { id: senderId } = req.user;
+    const isValid = isValidMongoDbId(receiverId);
+    if (!isValid) {
+      throw new Error("Invalid Mongo Id of receiver");
+    }
+
+    // First checking if sender is already following the receiver or not
+    const sender = await User.findById(senderId);
+    const isFollowing = sender.following.includes(receiverId);
+    if (isFollowing) {
+      // => User is already following the receiver, thus no need to push
+      throw new Error("You are already following this user");
+    }
+
+    // If reached here then user is not following the receiver
+
+    // Updating the following field of the sender
+    const updatedSender = await User.findByIdAndUpdate(
+      senderId,
+      {
+        // Method-1: Prevent duplicates using $addToSet
+        // Method-2: Prevent duplicates by checking in either the sender's followers or the receiver's following array , if they follow then we do not push and send message that aleady following to the frontend
+
+        // $push: { following: receiverId }  push allows duplicates in array so we'll use $addToSet to add only unique values and prevent duplicates
+        $addToSet: { following: receiverId },
+        isFollowing: true, // Used to indicate that the user follows at least one user
+      },
+      { new: true, runValidators: true }
+    );
+    // Updating the followers field of the receiver
+    const updatedReceiver = await User.findByIdAndUpdate(
+      receiverId,
+      {
+        $addToSet: { followers: senderId },
+        // $push: { followers: senderId } push allows duplicates in the array , so we'll use $addToSet to prevent duplicates
+      },
+      { new: true, runValidators: true }
+    );
+    res.status(200).json({
+      message: "You have successfully followed that User",
+      sender: updatedSender,
+      receiver: updatedReceiver,
+    });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+//--- Unfollow User ---//
+// Here receiver -> user who is being unfollowed , sender -> user who is unfollowing
+// Before starting to unfollow a user , we'll check if the user is following the other user or not, if not then we'll send a message that user is not following the other user
+// 1] Same remove reciver id from sender's following array
+// 2] Remove sender id from receiver's followers array
+// 3] Send a message to the frontend that you have successfully unfollowed that user
+const unfollowUserCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id: receiverId } = req.body;
+    const { id: senderId } = req.user;
+    const isValid = isValidMongoDbId(receiverId);
+    if (!isValid) {
+      throw new Error("Invalid Mongo Id of receiver");
+    }
+    // First checking if sender is  following the receiver or not
+    const sender = await User.findById(senderId);
+    const isFollowing = sender.following.includes(receiverId);
+    console.log(isFollowing);
+    if (!isFollowing) {
+      throw new Error("You are not following this user, So cannot unfollow");
+    }
+
+    // If reached here then user is following the receiver
+    // Updating the following field of the sender (using $pull operator)
+    const updatedSender = await User.findByIdAndUpdate(
+      senderId,
+      { $pull: { following: receiverId }, isFollowing: false },
+      { new: true, runValidators: true }
+    );
+    // Updating the receivers followes field by removing the sender id from the array (using $pull operator)
+    const updatedReceiver = await User.findByIdAndUpdate(
+      receiverId,
+      { $pull: { followers: senderId } },
+      { new: true, runValidators: true }
+    );
+    res.status(200).json({
+      message: "You have successfully unfollowed that User",
+      sender: updatedSender,
+      receiver: updatedReceiver,
+    });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+const blockUserCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id: userToBlock } = req.params;
+    const isValid = isValidMongoDbId(userToBlock);
+    if (!isValid) {
+      throw new Error("Invalid Mongo Id");
+    }
+    // Only the admin can block the user => Checking if the user is admin or not , by checking the role field in the req.user
+    // So we created a middleware to check if user is admin or not, if yes ten only this controller is run
+    const updatedUser = await User.findByIdAndUpdate(
+      userToBlock,
+      { isBlocked: true },
+      { new: true, runValidators: true }
+    );
+    res
+      .status(200)
+      .json({ message: "Blocked User Successfully", user: updatedUser });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+const unblockUserCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id: userToUnblock } = req.params;
+    const isValid = isValidMongoDbId(userToUnblock);
+    if (!isValid) {
+      throw new Error("Invalid Mongo Id");
+    }
+    const updatedUser = await User.findByIdAndUpdate(
+      userToUnblock,
+      { isBlocked: false },
+      { new: true, runValidators: true }
+    );
+    res
+      .status(200)
+      .json({ message: "Unblocked User Successfully", user: updatedUser });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
 module.exports = {
   registerUserCtrl,
   loginUserCtrl,
@@ -183,4 +323,8 @@ module.exports = {
   getUserProfileCtrl,
   updateProfileCtrl,
   updatePasswordCtrl,
+  followUserCtrl,
+  unfollowUserCtrl,
+  blockUserCtrl,
+  unblockUserCtrl,
 };
