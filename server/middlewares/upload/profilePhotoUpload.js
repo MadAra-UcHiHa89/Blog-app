@@ -28,7 +28,7 @@ const profilePhotoUpload = multer({
 
 // Profile photo resizing using sharp
 const profilePhotoResize = async (req, res, next) => {
-  // multer populates the req.file object with the file uploaded (Note: this middleware ,ust come after the multer middleware else req.file wont be populated)
+  // multer populates the req.file object with the file uploaded (Note: this middleware ,must come after the multer middleware else req.file wont be populated)
   // Checking if file is there or not
   if (!req.file) {
     // => No file uploaded no need to resize the image/ file

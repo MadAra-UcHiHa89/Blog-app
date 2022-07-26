@@ -4,6 +4,7 @@ const sgEmail = require("@sendgrid/mail"); // The sendgrid object which has meth
 const expressAsyncHandler = require("express-async-handler");
 const { generateToken } = require("../..//config/token/generateToken");
 const { isValidMongoDbId } = require("../../utils/validateMongoDBId");
+const { cloudinaryImageUpload } = require("../../utils/cloudinary");
 const crypto = require("crypto");
 
 sgEmail.setApiKey(process.env.SEND_GRID_API_KEY); // Setting the API key for the sendgrid object
@@ -487,11 +488,21 @@ const forgotPasswordCtrl = expressAsyncHandler(async (req, res) => {
 });
 
 // --- Profile Photo Upload --- //
-
+// endpoint: /api/users/profile-photo-upload
 const profilePhotoUploadCtrl = expressAsyncHandler(async (req, res) => {
   try {
     console.log("req", req.file);
-    res.json("Profile Photo Uploaded");
+    const { id } = req.user; // Since this router is only accessible by the logged in user, so we can get the user id from the req.user to get id of te user
+    // 1. Getting the local path of file to be uploaded
+    const localPath = `public/images/profile/${req.file.filename}`;
+    const uploadedFile = await cloudinaryImageUpload(localPath); // providing the path of file to be uploaded
+    // Now will store the url of the uploaded file in the user document
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { profilePhoto: uploadedFile?.secure_url },
+      { new: true, runValidators: true }
+    );
+    res.status(200).json({ message: "Succesfully ploaded image", updatedUser });
   } catch (err) {
     throw new Error(err);
   }
