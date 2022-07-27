@@ -100,4 +100,94 @@ const fetchSinglePostCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { createPostCtrl, fetchAllPostsCtrl, fetchSinglePostCtrl };
+// ---- Update a post ----// (User must be logged in && user can only update post which he created )
+
+const updatePostCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id: postId } = req.params;
+    const { id: userId } = req.user; // Since user must be logged in
+    const isValidId = isValidMongoDbId(postId);
+
+    if (!isValidId) {
+      throw new Error("Invalid post id");
+    }
+
+    // Now checking if the user is authorized to update the post i.e. The user must be the author of the post
+    const curPost = await Post.findById(postId).populate("author");
+
+    // Now we'll compare the user id with the author id of the post to check if the user is the author of the post
+    console.log(curPost.author._id, "curPost.author._id");
+    console.log(userId, "userId");
+    if (curPost.author._id != userId) {
+      throw new Error("You are not authorized to update this post");
+    }
+    // Else if same then we'll update the post
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      { ...req.body },
+      { new: true }
+    );
+    res
+      .status(200)
+      .json({ message: "Post updated successfully", post: updatedPost });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+// ---- Delete a post ----// (User must be logged in && user can only delete post which he created )
+// route: DELETE /api/posts/:id
+const deletePostCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id: postId } = req.params;
+    const { id: userId } = req.user;
+    const isValidId = isValidMongoDbId(postId);
+    if (!isValidId) {
+      throw new Error("Invalid post id");
+    }
+    // Now we'll check if the user is authorized to delete the post i.e. The user must be the author of the post
+    const curPostToBeDeleted = await Post.findById(postId).populate("author");
+    if (curPostToBeDeleted.author._id != userId) {
+      throw new Error("You are not authorized to delete this post");
+    }
+    // Else if same then we'll delete the post
+    const deletedPost = await Post.findByIdAndDelete(postId);
+    res
+      .status(200)
+      .json({ message: "Post deleted successfully", post: deletedPost });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+// --- Like a Post ---///
+// User can add a like as well as toggle a like (if already liked then user can remove the like)
+// route: PUT /api/posts/like/:id
+const addToogleLikeToPostCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id: postId } = req.params;
+    const { id: userId } = req.user; // Since user must be logged in to like a post
+    const isValidId = isValidMongoDbId(postId);
+    if (!isValidId) {
+      throw new Error("Invalid post id");
+    }
+    // First we'll fetch the post and check if the user has already liked the post or not
+    const curPost = await Post.findById(postId);
+    // Now we'll check if the user has already liked the post or not
+    const hasLiked = curPost.likes.includes(userId);
+    if (hasLiked) {
+      // => curUser has already liked the post => we'll remove the like i.e user id from the likes array
+    }
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+module.exports = {
+  createPostCtrl,
+  fetchAllPostsCtrl,
+  fetchSinglePostCtrl,
+  updatePostCtrl,
+  deletePostCtrl,
+  addToogleLikeToPostCtrl,
+};

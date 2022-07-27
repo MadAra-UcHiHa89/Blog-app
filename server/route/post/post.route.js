@@ -11,6 +11,9 @@ const {
   createPostCtrl,
   fetchAllPostsCtrl,
   fetchSinglePostCtrl,
+  updatePostCtrl,
+  deletePostCtrl,
+  addToogleLikeToPostCtrl,
 } = require("../../controllers/post/posts.controller");
 
 // Relative route is: /api/posts
@@ -30,5 +33,14 @@ router.get("/", authorizationMiddleware, fetchAllPostsCtrl);
 
 // Get A single post // route is: /api/posts/:id
 router.get("/:id", authorizationMiddleware, fetchSinglePostCtrl);
+
+// ---- Update a post ----// (User must be logged in && user can only update post which he created )
+router.put("/:id", authorizationMiddleware, updatePostCtrl);
+
+// ---- Delete a post ----// (User must be logged in && user can only delete post which he created )
+router.delete("/:id", authorizationMiddleware, deletePostCtrl);
+
+// --- Like /Toggle like a Post ---//
+router.put("/like/:id", authorizationMiddleware, addToogleLikeToPostCtrl);
 
 module.exports = router;
