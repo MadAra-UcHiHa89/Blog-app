@@ -12,6 +12,7 @@ const {
 } = require("./middlewares/error/errorHandler");
 
 const postRouter = require("./route/post/post.route");
+const commentsRouter = require("./route/comment/comment.route");
 
 //--DB Connection--//
 dbConnect();
@@ -27,6 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 //-- Routes --//
 app.use("/api/users", userRouter);
 app.use("/api/posts", postRouter);
+app.use("/api/comments", commentsRouter);
 // -- End of Routes --//
 
 // --Page not found error --// // If no route is found, we'll send a 404 error
