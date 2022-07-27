@@ -89,7 +89,10 @@ const fetchSinglePostCtrl = expressAsyncHandler(async (req, res) => {
         $inc: { numViews: 1 },
       },
       { new: true }
-    ).populate("author"); // populate method will populate the author field of the post document with the user document
+    )
+      .populate("author")
+      .populate("likes")
+      .populate("dislikes"); // populate method will populate the author field of the post document with the user document
     // Now since this post has been fetched, we'll increment the number of views of the post
 
     res
@@ -177,10 +180,112 @@ const addToogleLikeToPostCtrl = expressAsyncHandler(async (req, res) => {
     const hasLiked = curPost.likes.includes(userId);
     if (hasLiked) {
       // => curUser has already liked the post => we'll remove the like i.e user id from the likes array
+      // So we'll use the $pull operator to remove the user id from the likes array
+      const updatedPost = await Post.findByIdAndUpdate(
+        postId,
+        {
+          $pull: { likes: userId },
+        },
+        { new: true }
+      );
+      return res
+        .status(200)
+        .json({ message: "Like Toggled successfully", post: updatedPost });
     }
+    // Else if curUser hasnt liked then first we'll check if it belongs to the dislikes array or not
+    const hasDisliked = curPost.dislikes.includes(userId);
+    if (hasDisliked) {
+      // => currrent User has disliked the post so we'll remove it from the dislikes array and add it to the likes array
+      const updatedPost = await Post.findByIdAndUpdate(
+        postId,
+        {
+          $pull: { dislikes: userId },
+          $push: { likes: userId },
+        },
+        { new: true }
+      );
+      return res.status(200).json({
+        message: "Liked post successfully (After removing Dislike)",
+        post: updatedPost,
+      });
+    }
+    // => User hasnt disliked the post thus just add it to the likes array
+
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      {
+        $push: { likes: userId },
+      },
+      { new: true }
+    );
+    return res
+      .status(200)
+      .json({ message: "Liked post successfully", post: updatedPost });
   } catch (err) {
     throw new Error(err);
   }
+});
+
+const addToogleDislikeToPostCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id: postId } = req.params;
+    const { id: userId } = req.user;
+    const isValidId = isValidMongoDbId(postId);
+    if (!isValidId) {
+      throw new Error("Invalid post id");
+    }
+    // first fectch the post
+    const curPost = await Post.findByIdAndUpdate(postId);
+    // Check if user has already disliked the post
+    const hasDisliked = curPost.dislikes.includes(userId);
+    if (hasDisliked) {
+      // User has already disliked => toggle the dislike i.e remove the user id from the dislikes array
+      const updatedPost = await Post.findByIdAndUpdate(
+        postId,
+        {
+          $pull: { dislikes: userId },
+        },
+        { new: true }
+      );
+      return res
+        .status(200)
+        .json({ message: "Dislike toggled successfully", post: updatedPost });
+    }
+
+    // => User hasnt dislked post , thus we'll check if he has liked the post or not
+    const hasLiked = curPost.likes.includes(userId);
+    if (hasLiked) {
+      // => user has liked the post => remove from likes array and add to dislikes array
+      const updatedPost = await Post.findByIdAndUpdate(
+        postId,
+        {
+          $pull: { likes: userId },
+          $push: { dislikes: userId },
+        },
+        {
+          new: true,
+        }
+      );
+      return res.status(200).json({
+        message: "Disliked Post successfully (Removing the Like)",
+        post: updatedPost,
+      });
+    }
+
+    // => User hasnt liked the post thus just add it to the dislikes array
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      {
+        $push: { dislikes: userId },
+      },
+      {
+        new: true,
+      }
+    );
+    return res
+      .status(200)
+      .json({ message: "Disliked Post successfully", post: updatedPost });
+  } catch (err) {}
 });
 
 module.exports = {
@@ -190,4 +295,5 @@ module.exports = {
   updatePostCtrl,
   deletePostCtrl,
   addToogleLikeToPostCtrl,
+  addToogleDislikeToPostCtrl,
 };

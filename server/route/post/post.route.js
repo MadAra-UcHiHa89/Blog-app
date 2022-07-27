@@ -14,6 +14,7 @@ const {
   updatePostCtrl,
   deletePostCtrl,
   addToogleLikeToPostCtrl,
+  addToogleDislikeToPostCtrl,
 } = require("../../controllers/post/posts.controller");
 
 // Relative route is: /api/posts
@@ -42,5 +43,8 @@ router.delete("/:id", authorizationMiddleware, deletePostCtrl);
 
 // --- Like /Toggle like a Post ---//
 router.put("/like/:id", authorizationMiddleware, addToogleLikeToPostCtrl);
+
+// --- Dislike /Toggle dislike a Post ---//
+router.put("/dislike/:id", authorizationMiddleware, addToogleDislikeToPostCtrl);
 
 module.exports = router;
