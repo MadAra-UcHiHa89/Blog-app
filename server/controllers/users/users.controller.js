@@ -6,6 +6,7 @@ const { generateToken } = require("../..//config/token/generateToken");
 const { isValidMongoDbId } = require("../../utils/validateMongoDBId");
 const { cloudinaryImageUpload } = require("../../utils/cloudinary");
 const crypto = require("crypto");
+const fs = require("fs");
 
 sgEmail.setApiKey(process.env.SEND_GRID_API_KEY); // Setting the API key for the sendgrid object
 
@@ -121,7 +122,7 @@ const getUserProfileCtrl = expressAsyncHandler(async (req, res) => {
       throw new Error("Invalid Id");
     }
     if (id === req.user.id) {
-      const user = await User.findById(id);
+      const user = await User.findById(id).populate("posts"); // populating the posts virtual property with the posts created by the user i.e posts having auth field's value == user id
       res.status(200).json(user);
     } else {
       throw new Error("Not authorized to view this profile");
@@ -496,6 +497,10 @@ const profilePhotoUploadCtrl = expressAsyncHandler(async (req, res) => {
     // 1. Getting the local path of file to be uploaded
     const localPath = `public/images/profile/${req.file.filename}`;
     const uploadedFile = await cloudinaryImageUpload(localPath); // providing the path of file to be uploaded
+
+    // Once the file has been uploaded to cloudinary, we can delete the local file
+    fs.unlinkSync(localPath);
+
     // Now will store the url of the uploaded file in the user document
     const updatedUser = await User.findByIdAndUpdate(
       id,

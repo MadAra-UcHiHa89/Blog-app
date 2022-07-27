@@ -10,6 +10,9 @@ const {
   errorHandler,
   pageNotFound,
 } = require("./middlewares/error/errorHandler");
+
+const postRouter = require("./route/post/post.route");
+
 //--DB Connection--//
 dbConnect();
 
@@ -23,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 
 //-- Routes --//
 app.use("/api/users", userRouter);
-
+app.use("/api/posts", postRouter);
 // -- End of Routes --//
 
 // --Page not found error --// // If no route is found, we'll send a 404 error

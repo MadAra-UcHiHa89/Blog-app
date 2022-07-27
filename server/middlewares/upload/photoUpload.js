@@ -18,7 +18,7 @@ const multerFilter = (req, file, cb) => {
   }
 };
 
-const profilePhotoUpload = multer({
+const photoUpload = multer({
   storage: multerStorage,
   fileFilter: multerFilter,
   limits: {
@@ -56,4 +56,34 @@ const profilePhotoResize = async (req, res, next) => {
   next();
 };
 
-module.exports = { profilePhotoUpload, profilePhotoResize };
+// Post Photo resizing using sharp (Same just the path where post picutures wil be saved is different)
+const postPhotoResize = async (req, res, next) => {
+  // multer populates the req.file object with the file uploaded (Note: this middleware ,must come after the multer middleware else req.file wont be populated)
+  // Checking if file is there or not
+  if (!req.file) {
+    // => No file uploaded no need to resize the image/ file
+    next();
+  }
+  // => File is uploaded , so we'll resize the image
+  // We'll change the name of the file to be unique and random so that it doesn't overwrite the existing image / due to same names
+  //   So we cerate our own prooerty called fileName on the req.file object
+  req.file.filename = `user-${Date.now()}-${req.file.originalname}`; // req.file.originalname -> represents the name of the file that is being uploaded , Date.now() -> represents the current time in milliseconds so that it will be unique
+
+  await sharp(req.file.buffer) // sharp() function takes in the req.file.buffer as argument which contains the bytes of the image that is being uploaded
+    .resize(500, 500) // resize the image to 500x500
+    .toFormat("jpeg") // convert the image to jpeg format
+    .toFile(
+      `${path.join(
+        __dirname,
+        "..",
+        "..",
+        "public",
+        "images",
+        "post",
+        req.file.filename
+      )}`
+    ); // path where the image will be stored on the server
+  next();
+};
+
+module.exports = { photoUpload, postPhotoResize, profilePhotoResize };

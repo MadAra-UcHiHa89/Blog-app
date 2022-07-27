@@ -24,9 +24,9 @@ const {
   authorizationMiddleware,
 } = require("../../middlewares/auth/authMiddleware");
 const {
-  profilePhotoUpload,
+  photoUpload,
   profilePhotoResize,
-} = require("../../middlewares/upload/profilePhotoUpload");
+} = require("../../middlewares/upload/photoUpload");
 
 // Login User
 router.post("/login", loginUserCtrl);
@@ -73,7 +73,7 @@ router.put("/block/:id", authorizationMiddleware, blockUserCtrl);
 router.put(
   "/profilephoto-upload",
   authorizationMiddleware,
-  profilePhotoUpload.single("image"), // image -> value of name attribute of form's input field
+  photoUpload.single("image"), // image -> value of name attribute of form's input field
   profilePhotoResize, // Middleware that resizes the image
   profilePhotoUploadCtrl
 );

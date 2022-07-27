@@ -102,6 +102,13 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+// Creating a virtual property which refrences the posts created by the current user
+userSchema.virtual("posts", {
+  ref: "Post",
+  localField: "_id",
+  foreignField: "author",
+});
+
 //Since hashing isnt part of the controller and is part of the model we have tp hash the password before we save it to the database
 // Before saving the user to the database, we'll hash the password
 userSchema.pre("save", async function (next) {
