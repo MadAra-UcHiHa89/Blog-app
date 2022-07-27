@@ -9,7 +9,8 @@ const {
 } = require("../../middlewares/upload/photoUpload");
 const {
   createPostCtrl,
-  getAllPostsCtrl,
+  fetchAllPostsCtrl,
+  fetchSinglePostCtrl,
 } = require("../../controllers/post/posts.controller");
 
 // Relative route is: /api/posts
@@ -25,6 +26,9 @@ router.post(
 );
 
 // Get all posts
-router.get("/", authorizationMiddleware, getAllPostsCtrl);
+router.get("/", authorizationMiddleware, fetchAllPostsCtrl);
+
+// Get A single post // route is: /api/posts/:id
+router.get("/:id", authorizationMiddleware, fetchSinglePostCtrl);
 
 module.exports = router;

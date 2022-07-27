@@ -62,8 +62,8 @@ const createPostCtrl = expressAsyncHandler(async (req, res) => {
   }
 });
 
-//---- GET ALL POSTS ----//
-const getAllPostsCtrl = expressAsyncHandler(async (req, res) => {
+//---- Fetch ALL POSTS ----//
+const fetchAllPostsCtrl = expressAsyncHandler(async (req, res) => {
   try {
     const allPosts = await Post.find({}).populate("author");
     res
@@ -76,6 +76,28 @@ const getAllPostsCtrl = expressAsyncHandler(async (req, res) => {
 
 //---- Fecth A Single post ----//
 
-const fetchSinglePostCtrl = expressAsyncHandler(async (req, res) => {});
+const fetchSinglePostCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isIdValid = isValidMongoDbId(id);
+    if (!isIdValid) {
+      throw new Error("Invalid post id");
+    }
+    const fetechedPost = await Post.findByIdAndUpdate(
+      id,
+      {
+        $inc: { numViews: 1 },
+      },
+      { new: true }
+    ).populate("author"); // populate method will populate the author field of the post document with the user document
+    // Now since this post has been fetched, we'll increment the number of views of the post
 
-module.exports = { createPostCtrl, getAllPostsCtrl };
+    res
+      .status(200)
+      .json({ message: "Post fetched successfully", post: fetechedPost });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+module.exports = { createPostCtrl, fetchAllPostsCtrl, fetchSinglePostCtrl };
