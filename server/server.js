@@ -32,7 +32,7 @@ app.use("/api/users", userRouter);
 app.use("/api/posts", postRouter);
 app.use("/api/comments", commentsRouter);
 app.use("/api/email", messagesRouter);
-app.use("/api/categories", categoryRouter);
+app.use("/api/category", categoryRouter);
 // -- End of Routes --//
 
 // --Page not found error --// // If no route is found, we'll send a 404 error
