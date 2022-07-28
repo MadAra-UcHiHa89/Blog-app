@@ -45,10 +45,46 @@ const fetchSingleCategoryCtrl = expressAsyncHandler(async (req, res) => {
     if (!isValidId) {
       throw new Error("Invalid Category Id");
     }
-    const fetchedCategory = await Category.findById(categoryId);
+    const fetchedCategory = await Category.findById(categoryId).populate(
+      "user"
+    );
     res.status(200).json({
       message: "Fetched category successfully",
       category: fetchedCategory,
+    });
+  } catch (err) {
+    throw new Error(err);
+  }
+});
+
+// --- Update a category ---//
+const updateCategoryCtrl = expressAsyncHandler(async (req, res) => {
+  try {
+    const { id: categoryId } = req.params;
+    const { title } = req.body; // Since only title of a category can be updated && user who created the category can only update it i.e admin
+    const { id: userId } = req.user;
+    const isValidId = isValidMongoDbId(categoryId);
+    if (!isValidId) {
+      throw new Error("Invalid Category Id");
+    }
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      throw new Error("Category not found");
+    }
+    // Now checking if loggen in user is the user who created the category
+    const isUserAuthorized = category.user == userId;
+    if (!isUserAuthorized) {
+      throw new Error("You are not authorized to update this category");
+    }
+    // Now updating the category
+    const updatedCategory = await Category.findByIdAndUpdate(
+      categoryId,
+      { title },
+      { new: true, runValidators: true }
+    );
+    res.status(200).json({
+      message: "Category updated successfully",
+      category: updatedCategory,
     });
   } catch (err) {
     throw new Error(err);
@@ -59,4 +95,5 @@ module.exports = {
   createCategoryCtrl,
   fetchAllCategoriesCtrl,
   fetchSingleCategoryCtrl,
+  updateCategoryCtrl,
 };
