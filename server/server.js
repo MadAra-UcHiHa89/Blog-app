@@ -13,6 +13,8 @@ const {
 
 const postRouter = require("./route/post/post.route");
 const commentsRouter = require("./route/comment/comment.route");
+const messagesRouter = require("./route/EmailMessaging/EmailMessaging.route");
+const categoryRouter = require("./route/category/category.route");
 
 //--DB Connection--//
 dbConnect();
@@ -29,6 +31,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/users", userRouter);
 app.use("/api/posts", postRouter);
 app.use("/api/comments", commentsRouter);
+app.use("/api/email", messagesRouter);
+app.use("/api/categories", categoryRouter);
 // -- End of Routes --//
 
 // --Page not found error --// // If no route is found, we'll send a 404 error

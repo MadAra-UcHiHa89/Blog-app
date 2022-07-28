@@ -109,6 +109,13 @@ userSchema.virtual("posts", {
   foreignField: "author",
 });
 
+// Creating a comments virtual property which refrences the comments created by the current user
+userSchema.virtual("comments", {
+  ref: "Comment",
+  localField: "_id",
+  foreignField: "user",
+});
+
 //Since hashing isnt part of the controller and is part of the model we have tp hash the password before we save it to the database
 // Before saving the user to the database, we'll hash the password
 userSchema.pre("save", async function (next) {

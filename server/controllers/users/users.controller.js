@@ -122,7 +122,10 @@ const getUserProfileCtrl = expressAsyncHandler(async (req, res) => {
       throw new Error("Invalid Id");
     }
     if (id === req.user.id) {
-      const user = await User.findById(id).populate("posts"); // populating the posts virtual property with the posts created by the user i.e posts having auth field's value == user id
+      const user = await User.findById(id)
+        .populate("posts")
+        .populate("comments"); // populating the posts virtual property with the posts created by the user i.e posts having auth field's value == user id
+      // Amd populating the comments virtual property with the comments created by the user i.e comments having user field's value (in Comment documents ) == user id
       res.status(200).json(user);
     } else {
       throw new Error("Not authorized to view this profile");
