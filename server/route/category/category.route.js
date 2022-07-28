@@ -8,6 +8,7 @@ const {
   fetchAllCategoriesCtrl,
   fetchSingleCategoryCtrl,
   updateCategoryCtrl,
+  deleteCategoryCtrl,
 } = require("../../controllers/category/category.controller");
 
 // Relative route is: /api/category
@@ -24,5 +25,9 @@ router.get("/:id", authorizationMiddleware, fetchSingleCategoryCtrl);
 // ---Update a Category ---//
 // Only the user who created the Category can update the Category
 router.put("/:id", authorizationMiddleware, updateCategoryCtrl);
+
+// ----Delete a Category ----//
+// Only the user who created the Category can delete the Category
+router.delete("/:id", authorizationMiddleware, deleteCategoryCtrl);
 
 module.exports = router;
