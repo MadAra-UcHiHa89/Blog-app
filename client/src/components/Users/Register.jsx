@@ -18,7 +18,7 @@ const formSchema = yup.object({
 
 const Register = () => {
   const dispatch = useDispatch();
-  const { loading, appError, serverError, registered } = useSelector(
+  const { loading, appError, serverError, registered, userAuth } = useSelector(
     (state) => state.user
   ); // accessing the user slice of the state
 
@@ -27,8 +27,12 @@ const Register = () => {
     // User has lready registered then redirect to login page
     navigate("/login", { replace: true });
   }
+  // If user is logged in then redirect to profile page
+  if (userAuth) {
+    navigate("/profile", { replace: true });
+  }
 
-  console.log(loading, appError, serverError, registered, "From Register");
+  // console.log(loading, appError, serverError, registered, "From Register");
 
   // Formik
   const formik = useFormik({

@@ -8,7 +8,7 @@ export const registerUserAction = createAsyncThunk(
   "user/register",
   async (details, { rejectWithValue, getState, dispatch }) => {
     const { firstName, lastName, email, password } = details; // payload of the action
-    console.log("details", details);
+    // console.log("details", details);
     try {
       const response = await fetch(`${baseUrl}/users/register`, {
         method: "POST",
@@ -77,6 +77,14 @@ const initialState = {
 const userSlice = createSlice({
   name: "user",
   initialState: initialState,
+  reducers: {
+    logoutUserAction: (state, action) => {
+      // Normal reducer for logout since no need for async tasks
+
+      state.userAuth = null;
+      localStorage.removeItem("user");
+    }
+  },
   extraReducers: {
     // Using Map Notation
     [registerUserAction.pending]: (state, action) => {
@@ -120,3 +128,4 @@ const userSlice = createSlice({
 });
 
 export default userSlice.reducer; // exporting the reducers os slice , to be used in the store configuration
+export const { logoutUserAction } = userSlice.actions; // exporting the actions of slice , to be used for dispatching actions

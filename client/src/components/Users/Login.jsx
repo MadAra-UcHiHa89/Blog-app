@@ -17,13 +17,13 @@ const Login = () => {
   const { userAuth, loading, appError, serverError } = useSelector(
     (state) => state.user
   ); // acccessing the user slice of the state
-  console.log("userAuth", userAuth);
+  //   console.log("userAuth", userAuth);
   if (userAuth) {
     // userAuth will only be true if the user is already logged in, hence redirect to dashboard
-    navigate("/");
+    navigate("/profile");
   }
 
-  console.log(userAuth, loading, appError, serverError, "From Login");
+  //   console.log(userAuth, loading, appError, serverError, "From Login");
   const formik = useFormik({
     initialValues: {
       email: "",
