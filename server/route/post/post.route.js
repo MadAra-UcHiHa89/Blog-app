@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const {
-  authorizationMiddleware,
+  authorizationMiddleware
 } = require("../../middlewares/auth/authMiddleware");
 const {
   photoUpload,
-  postPhotoResize,
+  postPhotoResize
 } = require("../../middlewares/upload/photoUpload");
 const {
   createPostCtrl,
@@ -14,7 +14,7 @@ const {
   updatePostCtrl,
   deletePostCtrl,
   addToogleLikeToPostCtrl,
-  addToogleDislikeToPostCtrl,
+  addToogleDislikeToPostCtrl
 } = require("../../controllers/post/posts.controller");
 
 // Relative route is: /api/posts
@@ -24,8 +24,8 @@ const {
 router.post(
   "/",
   authorizationMiddleware,
-  photoUpload.single("image"),
-  postPhotoResize,
+  // photoUpload.single("image"),
+  // postPhotoResize,
   createPostCtrl
 );
 

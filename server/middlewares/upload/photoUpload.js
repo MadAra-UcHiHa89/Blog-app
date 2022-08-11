@@ -22,8 +22,8 @@ const photoUpload = multer({
   storage: multerStorage,
   fileFilter: multerFilter,
   limits: {
-    fileSize: 1000000, // 1MB = 1000000 bytes
-  },
+    fileSize: 1000000 // 1MB = 1000000 bytes
+  }
 });
 
 // Profile photo resizing using sharp
@@ -37,9 +37,9 @@ const profilePhotoResize = async (req, res, next) => {
   // => File is uploaded , so we'll resize the image
   // We'll change the name of the file to be unique and random so that it doesn't overwrite the existing image / due to same names
   //   So we cerate our own prooerty called fileName on the req.file object
-  req.file.filename = `user-${Date.now()}-${req.file.originalname}`; // req.file.originalname -> represents the name of the file that is being uploaded , Date.now() -> represents the current time in milliseconds so that it will be unique
+  req.file.filename = `user-${Date.now()}-${req?.file?.originalname}`; // req.file.originalname -> represents the name of the file that is being uploaded , Date.now() -> represents the current time in milliseconds so that it will be unique
 
-  await sharp(req.file.buffer) // sharp() function takes in the req.file.buffer as argument which contains the bytes of the image that is being uploaded
+  await sharp(req?.file?.buffer) // sharp() function takes in the req.file.buffer as argument which contains the bytes of the image that is being uploaded
     .resize(250, 250) // resize the image to 250x250
     .toFormat("jpeg") // convert the image to jpeg format
     .toFile(
@@ -62,12 +62,14 @@ const postPhotoResize = async (req, res, next) => {
   // Checking if file is there or not
   if (!req.file) {
     // => No file uploaded no need to resize the image/ file
+    console.log("no file uploaded post");
     next();
   }
+  console.log("after next");
   // => File is uploaded , so we'll resize the image
   // We'll change the name of the file to be unique and random so that it doesn't overwrite the existing image / due to same names
   //   So we cerate our own prooerty called fileName on the req.file object
-  req.file.filename = `user-${Date.now()}-${req.file.originalname}`; // req.file.originalname -> represents the name of the file that is being uploaded , Date.now() -> represents the current time in milliseconds so that it will be unique
+  req.file.filename = `user-${Date.now()}-${req?.file?.originalname}`; // req.file.originalname -> represents the name of the file that is being uploaded , Date.now() -> represents the current time in milliseconds so that it will be unique
 
   await sharp(req.file.buffer) // sharp() function takes in the req.file.buffer as argument which contains the bytes of the image that is being uploaded
     .resize(500, 500) // resize the image to 500x500

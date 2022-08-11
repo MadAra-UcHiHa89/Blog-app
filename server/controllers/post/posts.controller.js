@@ -31,31 +31,33 @@ const createPostCtrl = expressAsyncHandler(async (req, res) => {
         { new: true }
       );
       return res.status(400).json({
+        error: true,
         message: "Your post contains bad words. You have been blocked.",
-        User: blockedUser,
+        User: blockedUser
       });
     }
     // If the user doesn't contain bad words, then we'll create the post
     // Now  user has provided a file (image) then we'll upload it to cloudinary
-    console.log("req.file", req.file);
-    const localPath = `public/images/post/${req.file.filename}`; // path of file to upload to cloudinary
-    const uploadedImg = await cloudinaryImageUpload(localPath);
+    // console.log("req.file", req.file);
+    // const localPath = `public/images/post/${req.file.filename}`; // path of file to upload to cloudinary
+    // const uploadedImg = await cloudinaryImageUpload(localPath);
 
-    // We will delete the file from the local server once it is uploaded to cloudinary ie now
-    // We'll use the fs module to delete the file from the local server
-    fs.unlinkSync(localPath); // deletes the file from the local server
+    // // We will delete the file from the local server once it is uploaded to cloudinary ie now
+    // // We'll use the fs module to delete the file from the local server
+    // fs.unlinkSync(localPath); // deletes the file from the local server
 
     //  We have to set id of user to post  document's author field ,
+    // console.log(req.body);
     const newPost = await Post.create({
       title: req?.body?.title,
-      category: req?.body?.category,
+      // category: req?.body?.category,
       description: req?.body?.description,
-      author: id,
-      image: uploadedImg?.secure_url,
+      author: id
+      // image: uploadedImg?.secure_url
     });
     res.status(200).json({
       message: "Post created successfully",
-      post: newPost,
+      post: newPost
     });
   } catch (err) {
     throw new Error(err);
@@ -86,7 +88,7 @@ const fetchSinglePostCtrl = expressAsyncHandler(async (req, res) => {
     const fetechedPost = await Post.findByIdAndUpdate(
       id,
       {
-        $inc: { numViews: 1 },
+        $inc: { numViews: 1 }
       },
       { new: true }
     )
@@ -184,7 +186,7 @@ const addToogleLikeToPostCtrl = expressAsyncHandler(async (req, res) => {
       const updatedPost = await Post.findByIdAndUpdate(
         postId,
         {
-          $pull: { likes: userId },
+          $pull: { likes: userId }
         },
         { new: true }
       );
@@ -200,13 +202,13 @@ const addToogleLikeToPostCtrl = expressAsyncHandler(async (req, res) => {
         postId,
         {
           $pull: { dislikes: userId },
-          $push: { likes: userId },
+          $push: { likes: userId }
         },
         { new: true }
       );
       return res.status(200).json({
         message: "Liked post successfully (After removing Dislike)",
-        post: updatedPost,
+        post: updatedPost
       });
     }
     // => User hasnt disliked the post thus just add it to the likes array
@@ -214,7 +216,7 @@ const addToogleLikeToPostCtrl = expressAsyncHandler(async (req, res) => {
     const updatedPost = await Post.findByIdAndUpdate(
       postId,
       {
-        $push: { likes: userId },
+        $push: { likes: userId }
       },
       { new: true }
     );
@@ -243,7 +245,7 @@ const addToogleDislikeToPostCtrl = expressAsyncHandler(async (req, res) => {
       const updatedPost = await Post.findByIdAndUpdate(
         postId,
         {
-          $pull: { dislikes: userId },
+          $pull: { dislikes: userId }
         },
         { new: true }
       );
@@ -260,15 +262,15 @@ const addToogleDislikeToPostCtrl = expressAsyncHandler(async (req, res) => {
         postId,
         {
           $pull: { likes: userId },
-          $push: { dislikes: userId },
+          $push: { dislikes: userId }
         },
         {
-          new: true,
+          new: true
         }
       );
       return res.status(200).json({
         message: "Disliked Post successfully (Removing the Like)",
-        post: updatedPost,
+        post: updatedPost
       });
     }
 
@@ -276,10 +278,10 @@ const addToogleDislikeToPostCtrl = expressAsyncHandler(async (req, res) => {
     const updatedPost = await Post.findByIdAndUpdate(
       postId,
       {
-        $push: { dislikes: userId },
+        $push: { dislikes: userId }
       },
       {
-        new: true,
+        new: true
       }
     );
     return res
@@ -295,5 +297,5 @@ module.exports = {
   updatePostCtrl,
   deletePostCtrl,
   addToogleLikeToPostCtrl,
-  addToogleDislikeToPostCtrl,
+  addToogleDislikeToPostCtrl
 };

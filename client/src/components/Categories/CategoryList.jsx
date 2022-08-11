@@ -2,7 +2,12 @@ import { Link } from "react-router-dom";
 import { PencilAltIcon } from "@heroicons/react/outline";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchCategoriesAction } from "../../redux/slices/category/categorySlice";
+import {
+  fetchCategoriesAction,
+  resetEditAction
+} from "../../redux/slices/category/categorySlice";
+import DateFormatter from "../../utils/DateFormatter";
+import Loading from "../../utils/Loading";
 
 const CategoryList = () => {
   const dispatch = useDispatch();
@@ -15,7 +20,7 @@ const CategoryList = () => {
   return (
     <>
       {loading ? (
-        <h2 className="text-center text-3xl text-green-300">Loading</h2>
+        <Loading />
       ) : appError ? (
         <h2 className="text-center text-3xl text-green-300">{appError}</h2>
       ) : categoryList.length <= 0 ? (
@@ -86,9 +91,14 @@ const CategoryList = () => {
                               {category.title}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {/* <DateFormatter date={category?.createdAt} /> */}
+                              <DateFormatter date={category?.createdAt} />
                             </td>
-                            <Link to="/profile">
+                            <Link
+                              onClick={() => {
+                                dispatch(resetEditAction()); // dispatch the resetEditAction when the edit button is clicked, so that updatedCategory is set to null and deletedCategory is set to null
+                              }}
+                              to={`/update-category/${category._id}`}
+                            >
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <PencilAltIcon className="h-5 text-indigo-500" />
                               </td>

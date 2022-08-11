@@ -3,6 +3,7 @@ import * as Yup from "yup";
 import { PlusCircleIcon, BookOpenIcon } from "@heroicons/react/solid";
 import { useDispatch, useSelector } from "react-redux";
 import { createCategoryAction } from "../../redux/slices/category/categorySlice";
+import { useNavigate } from "react-router-dom";
 
 const formSchema = Yup.object({
   title: Yup.string().required("Title is required")
@@ -10,9 +11,16 @@ const formSchema = Yup.object({
 
 const AddNewCategory = () => {
   const dispatch = useDispatch();
-  const { loading, appError, serverError, category } = useSelector(
+  const navigate = useNavigate();
+  const { loading, appError, serverError, addedCategory } = useSelector(
     (state) => state.category
   );
+
+  // Redirect to /category-list after adding a new category i.e if added category exists
+  if (addedCategory) {
+    navigate("/category-list", { replace: true });
+  }
+
   const formik = useFormik({
     initialValues: {
       title: ""

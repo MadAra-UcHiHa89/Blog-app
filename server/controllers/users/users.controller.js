@@ -27,7 +27,7 @@ const registerUserCtrl = expressAsyncHandler(async (req, res) => {
       firstName: req?.body?.firstName, // shorthand for => req.body && req.body.firstName
       lastName: req?.body?.lastName,
       email: req?.body?.email,
-      password: req?.body?.password,
+      password: req?.body?.password
     });
 
     return res.status(200).json(user);
@@ -38,12 +38,11 @@ const registerUserCtrl = expressAsyncHandler(async (req, res) => {
 
 // ---Login User ---//
 const loginUserCtrl = expressAsyncHandler(async (req, res) => {
+  const user = await User.findOne({ email: req?.body?.email });
+  if (!user) {
+    throw new Error("User not found");
+  }
   try {
-    const user = await User.findOne({ email: req?.body?.email });
-    if (!user) {
-      throw new Error("User not found");
-    }
-
     const isMatch = await user.comparePassword(req?.body?.password);
     const valid = await bcrypt.compare(req?.body?.password, user?.password);
     console.log(req.body.password);
@@ -61,10 +60,10 @@ const loginUserCtrl = expressAsyncHandler(async (req, res) => {
       lastName: user?.lastName,
       profilePhoto: user?.profilePhoto,
       isAdmin: user?.isAdmin,
-      token,
+      token
     });
   } catch (err) {
-    throw new Error(err);
+    throw new Error(err.message);
   }
 });
 
@@ -152,7 +151,7 @@ const updateProfileCtrl = expressAsyncHandler(async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(id, req.body, {
       new: true,
-      runValidators: true, // This will run the validators defined in the model
+      runValidators: true // This will run the validators defined in the model
     });
     res.status(200).json(updatedUser);
   } catch (err) {
@@ -224,7 +223,7 @@ const followUserCtrl = expressAsyncHandler(async (req, res) => {
 
         // $push: { following: receiverId }  push allows duplicates in array so we'll use $addToSet to add only unique values and prevent duplicates
         $addToSet: { following: receiverId },
-        isFollowing: true, // Used to indicate that the user follows at least one user
+        isFollowing: true // Used to indicate that the user follows at least one user
       },
       { new: true, runValidators: true }
     );
@@ -232,7 +231,7 @@ const followUserCtrl = expressAsyncHandler(async (req, res) => {
     const updatedReceiver = await User.findByIdAndUpdate(
       receiverId,
       {
-        $addToSet: { followers: senderId },
+        $addToSet: { followers: senderId }
         // $push: { followers: senderId } push allows duplicates in the array , so we'll use $addToSet to prevent duplicates
       },
       { new: true, runValidators: true }
@@ -240,7 +239,7 @@ const followUserCtrl = expressAsyncHandler(async (req, res) => {
     res.status(200).json({
       message: "You have successfully followed that User",
       sender: updatedSender,
-      receiver: updatedReceiver,
+      receiver: updatedReceiver
     });
   } catch (err) {
     throw new Error(err);
@@ -285,7 +284,7 @@ const unfollowUserCtrl = expressAsyncHandler(async (req, res) => {
     res.status(200).json({
       message: "You have successfully unfollowed that User",
       sender: updatedSender,
-      receiver: updatedReceiver,
+      receiver: updatedReceiver
     });
   } catch (err) {
     throw new Error(err);
@@ -360,7 +359,7 @@ const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
         from: "aadilsaudagar26@gmail.com", // Change to your verified sender
         subject: "Blog App - Email Verification",
         // text: "Just testing",
-        html: verifyURL,
+        html: verifyURL
       };
 
       const response = await sgEmail.send(msg);
@@ -386,7 +385,7 @@ const verifyAccountCtrl = expressAsyncHandler(async (req, res) => {
       .digest("hex"); // Hashing the token
     // Getting user by the hashed password thus if there exits a user => then the token is valid, else token is invalid
     const user = await User.findOne({
-      accountVerificationToken: hasedPassword,
+      accountVerificationToken: hasedPassword
     });
     if (!user) {
       throw new Error("Invalid Token");
@@ -401,7 +400,7 @@ const verifyAccountCtrl = expressAsyncHandler(async (req, res) => {
       {
         isAccountVerified: true,
         accountVerificationToken: "",
-        accountVerificationTokenExpires: "",
+        accountVerificationTokenExpires: ""
       },
       { new: true, runValidators: true }
     );
@@ -438,13 +437,13 @@ const forgotPasswordTokenCtrl = expressAsyncHandler(async (req, res) => {
       from: "aadilsaudagar26@gmail.com", // verified sender address of send grid
       subject: "Blog App - Password Reset",
       // text: "Just testing",
-      html: resetURL,
+      html: resetURL
     };
     // Now sending the email
     const response = await sgEmail.send(msg);
     res.status(200).json({
       message: `Verification message sent to ${email}. Reset within 10 Minutes `,
-      resetURL,
+      resetURL
     });
   } catch (err) {
     throw new Error(err);
@@ -479,7 +478,7 @@ const forgotPasswordCtrl = expressAsyncHandler(async (req, res) => {
       {
         password: hashedPassword,
         passwordResetToken: "",
-        passwordResetTokenExpires: "",
+        passwordResetTokenExpires: ""
       },
       { new: true, runValidators: true }
     );
@@ -533,5 +532,5 @@ module.exports = {
   verifyAccountCtrl,
   forgotPasswordTokenCtrl,
   forgotPasswordCtrl,
-  profilePhotoUploadCtrl,
+  profilePhotoUploadCtrl
 };

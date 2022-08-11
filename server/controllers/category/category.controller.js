@@ -8,16 +8,19 @@ const { isValidMongoDbId } = require("../../utils/validateMongoDBId");
 
 const createCategoryCtrl = expressAsyncHandler(async (req, res) => {
   try {
+    // if (!req.user.isAdmin) {
+    //   throw new Error("You are not authorized to create a category");
+    // }
     const createdCategory = await Category.create({
       user: req?.user?._id,
-      title: req.body.title,
+      title: req.body.title
     });
     res.status(200).json({
       message: "Category created successfully",
-      category: createdCategory,
+      category: createdCategory
     });
   } catch (err) {
-    throw new Error(err);
+    throw new Error(err.message);
   }
 });
 
@@ -29,7 +32,7 @@ const fetchAllCategoriesCtrl = expressAsyncHandler(async (req, res) => {
       .sort("-createdAt"); // Sorting in descending order of createdAt
     res.status(200).json({
       message: "All categories fetched successfully",
-      categories: allCategories,
+      categories: allCategories
     });
   } catch (err) {
     throw new Error(err);
@@ -50,7 +53,7 @@ const fetchSingleCategoryCtrl = expressAsyncHandler(async (req, res) => {
     );
     res.status(200).json({
       message: "Fetched category successfully",
-      category: fetchedCategory,
+      category: fetchedCategory
     });
   } catch (err) {
     throw new Error(err);
@@ -61,9 +64,11 @@ const fetchSingleCategoryCtrl = expressAsyncHandler(async (req, res) => {
 const updateCategoryCtrl = expressAsyncHandler(async (req, res) => {
   try {
     const { id: categoryId } = req.params;
+    console.log(req.params);
     const { title } = req.body; // Since only title of a category can be updated && user who created the category can only update it i.e admin
     const { id: userId } = req.user;
     const isValidId = isValidMongoDbId(categoryId);
+    console.log("categoryId", categoryId);
     if (!isValidId) {
       throw new Error("Invalid Category Id");
     }
@@ -84,7 +89,7 @@ const updateCategoryCtrl = expressAsyncHandler(async (req, res) => {
     );
     res.status(200).json({
       message: "Category updated successfully",
-      category: updatedCategory,
+      category: updatedCategory
     });
   } catch (err) {
     throw new Error(err);
@@ -115,7 +120,7 @@ const deleteCategoryCtrl = expressAsyncHandler(async (req, res) => {
     const deletedCategory = await Category.findByIdAndDelete(categoryId);
     res.status(200).json({
       message: "Category deleted successfully",
-      category: deletedCategory,
+      category: deletedCategory
     });
   } catch (err) {
     throw new Error(err);
@@ -127,5 +132,5 @@ module.exports = {
   fetchAllCategoriesCtrl,
   fetchSingleCategoryCtrl,
   updateCategoryCtrl,
-  deleteCategoryCtrl,
+  deleteCategoryCtrl
 };

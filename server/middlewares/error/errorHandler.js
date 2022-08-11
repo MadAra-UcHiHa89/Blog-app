@@ -1,9 +1,11 @@
 function errorHandler(err, req, res, next) {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode; // Since sometimes even when there's an error, the status code is 200, we'll set it to 500
   res.status(statusCode);
+  console.log(err.message);
   res.json({
     message: err?.message, // == err&& err.message i.e both err and err.message are truthsy . Each error thrown has a message described in new throw Error("message")
-    stack: process.env.NODE_ENV === "production" ? "🥞" : err.stack, // The stack trace i.e where the error occured if in production mode then don't show the stack trace else in development mode show the stack trace
+    error: true,
+    stack: process.env.NODE_ENV === "production" ? "🥞" : err.stack // The stack trace i.e where the error occured if in production mode then don't show the stack trace else in development mode show the stack trace
   });
 }
 

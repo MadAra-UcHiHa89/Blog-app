@@ -13,6 +13,7 @@ import {
 import { PlusIcon } from "@heroicons/react/solid";
 import { useDispatch } from "react-redux";
 import { logoutUserAction } from "../../../redux/slices/user/userSlice";
+import { resetAddedCategoryAction } from "../../../redux/slices/category/categorySlice";
 
 const navigation = [
   { name: "Home", href: "/", current: true },
@@ -60,6 +61,11 @@ const AdminNavbar = () => {
                 <div className="hidden md:ml-6 md:flex md:items-center md:space-x-4">
                   {navigation.map((item) => (
                     <Link
+                      onClick={() => {
+                        if (item.name === "Add Category") {
+                          dispatch(resetAddedCategoryAction());
+                        }
+                      }}
                       key={item.name}
                       to={item.href}
                       className={classNames(
