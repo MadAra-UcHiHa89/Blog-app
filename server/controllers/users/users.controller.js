@@ -379,13 +379,13 @@ const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
 const verifyAccountCtrl = expressAsyncHandler(async (req, res) => {
   try {
     const { token } = req.params;
-    const hasedPassword = crypto
+    const hashedPassword = crypto
       .createHash("sha256")
       .update(token)
       .digest("hex"); // Hashing the token
     // Getting user by the hashed password thus if there exits a user => then the token is valid, else token is invalid
     const user = await User.findOne({
-      accountVerificationToken: hasedPassword
+      accountVerificationToken: hashedPassword
     });
     if (!user) {
       throw new Error("Invalid Token");
